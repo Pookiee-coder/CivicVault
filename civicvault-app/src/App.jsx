@@ -107,14 +107,16 @@ function AccessToggle({ granted, onToggle }) {
   );
 }
 
-function DocCard({ doc, onToggle, onApprove, onDeny }) {
+// *** CHANGED: added onDelete prop ***
+function DocCard({ doc, onToggle, onApprove, onDeny, onDelete }) {
   const pendingReqs = doc.requests.filter(r => r.status === "pending");
 
   return (
     <div style={{
       background: "#fff",
       borderRadius: "16px",
-      border: "1.5px solid #f1f5f9",
+      // *** CHANGED: red left border for user-uploaded docs ***
+      border: doc.userUploaded ? "1.5px solid #fca5a5" : "1.5px solid #f1f5f9",
       padding: "20px 22px",
       display: "flex",
       flexDirection: "column",
@@ -129,7 +131,22 @@ function DocCard({ doc, onToggle, onApprove, onDeny }) {
             {doc.period || doc.issuer} · {doc.size}
           </div>
         </div>
-        <AccessToggle granted={doc.accessGranted} onToggle={onToggle} />
+        {/* *** CHANGED: added delete button alongside toggle *** */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <AccessToggle granted={doc.accessGranted} onToggle={onToggle} />
+          <button
+            onClick={onDelete}
+            title="Delete document"
+            style={{
+              padding: "6px 12px", borderRadius: "8px",
+              border: "1.5px solid #fca5a5", background: "#fff1f2",
+              color: "#dc2626", fontSize: "12px", fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       {/* Last accessed */}
@@ -231,6 +248,9 @@ export default function CivicVault() {
   const [docs, setDocs] = useState(initialDocs);
   const [toast, setToast] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
+  // *** CHANGED: upload modal state ***
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadForm, setUploadForm] = useState({ name: "", meta: "", size: "" });
 
   const showToast = (msg, color = "#22c55e") => {
     setToast({ msg, color });
@@ -263,18 +283,44 @@ export default function CivicVault() {
     );
   };
 
+  // *** CHANGED: upload a new document into current tab ***
+  const uploadDoc = () => {
+    if (!uploadForm.name.trim()) return;
+    const newDoc = {
+      id: `u-${Date.now()}`,
+      name: uploadForm.name.trim(),
+      [activeTab === "bank" ? "period" : "issuer"]: uploadForm.meta.trim() || "—",
+      size: uploadForm.size.trim() || "—",
+      accessGranted: false,
+      lastAccessed: null,
+      requests: [],
+      userUploaded: true,
+    };
+    setDocs(prev => ({ ...prev, [activeTab]: [...prev[activeTab], newDoc] }));
+    setUploadForm({ name: "", meta: "", size: "" });
+    setShowUpload(false);
+    showToast(`"${newDoc.name}" uploaded successfully`);
+  };
+
+  // *** CHANGED: delete a document by id from current section ***
+  const deleteDoc = (section, id) => {
+    const doc = docs[section].find(d => d.id === id);
+    setDocs(prev => ({ ...prev, [section]: prev[section].filter(d => d.id !== id) }));
+    showToast(`"${doc.name}" deleted`, "#64748b");
+  };
+
   const handleRequest = (section, docId, req, approved) => {
     setDocs(prev => ({
       ...prev,
       [section]: prev[section].map(d =>
         d.id === docId
           ? {
-            ...d,
-            accessGranted: approved ? true : d.accessGranted,
-            requests: d.requests.map(r =>
-              r === req ? { ...r, status: approved ? "approved" : "denied" } : r
-            ),
-          }
+              ...d,
+              accessGranted: approved ? true : d.accessGranted,
+              requests: d.requests.map(r =>
+                r === req ? { ...r, status: approved ? "approved" : "denied" } : r
+              ),
+            }
           : d
       ),
     }));
@@ -291,6 +337,75 @@ export default function CivicVault() {
       background: "#f8fafc",
       fontFamily: "'DM Sans', 'Outfit', system-ui, sans-serif",
     }}>
+      {/* *** CHANGED: Upload Modal *** */}
+      {showUpload && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 2000,
+          background: "rgba(15,23,42,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)",
+          animation: "fadeIn 0.15s ease",
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: "20px",
+            padding: "32px 28px", maxWidth: 400, width: "90%",
+            boxShadow: "0 24px 60px rgba(15,23,42,0.2)",
+          }}>
+            <div style={{ fontWeight: 800, fontSize: "17px", color: "#0f172a", marginBottom: 4 }}>
+              Upload Document
+            </div>
+            <div style={{ fontSize: "12px", color: "#94a3b8", marginBottom: 20 }}>
+              Adding to: <strong>{activeTab === "bank" ? "Bank Statements" : "Gov. Documents"}</strong>
+            </div>
+            {[
+              { label: "Document Name *", key: "name", placeholder: "e.g. ICICI Bank Statement" },
+              { label: activeTab === "bank" ? "Period" : "Issuer", key: "meta", placeholder: activeTab === "bank" ? "e.g. Jan – Mar 2026" : "e.g. UIDAI" },
+              { label: "File Size", key: "size", placeholder: "e.g. 1.2 MB" },
+            ].map(field => (
+              <div key={field.key} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: 5 }}>{field.label}</div>
+                <input
+                  value={uploadForm[field.key]}
+                  onChange={e => setUploadForm(f => ({ ...f, [field.key]: e.target.value }))}
+                  placeholder={field.placeholder}
+                  style={{
+                    width: "100%", padding: "9px 12px",
+                    borderRadius: "10px", border: "1.5px solid #e2e8f0",
+                    fontSize: "13px", fontFamily: "inherit",
+                    outline: "none", color: "#0f172a",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              <button
+                onClick={() => { setShowUpload(false); setUploadForm({ name: "", meta: "", size: "" }); }}
+                style={{
+                  flex: 1, padding: "11px", borderRadius: "10px",
+                  border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                  color: "#64748b", fontWeight: 600, fontSize: "13px",
+                  cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={uploadDoc}
+                style={{
+                  flex: 1, padding: "11px", borderRadius: "10px",
+                  border: "none", background: "#0f172a",
+                  color: "#fff", fontWeight: 700, fontSize: "13px",
+                  cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Warning Modal */}
       {showWarning && (
         <div style={{
@@ -449,9 +564,14 @@ export default function CivicVault() {
                 onToggle={() => toggleAccess(activeTab, doc.id)}
                 onApprove={(req) => handleRequest(activeTab, doc.id, req, true)}
                 onDeny={(req) => handleRequest(activeTab, doc.id, req, false)}
+                // *** CHANGED: wire delete handler ***
+                onDelete={() => deleteDoc(activeTab, doc.id)}
               />
             ))}
-            <button style={{
+            {/* *** CHANGED: button now opens upload modal *** */}
+            <button
+              onClick={() => setShowUpload(true)}
+              style={{
               background: "none",
               border: "1.5px dashed #cbd5e1",
               borderRadius: "16px",
