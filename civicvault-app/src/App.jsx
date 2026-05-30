@@ -16,7 +16,6 @@ const initialDocs = {
       name: "SBI Savings Account",
       period: "Jan – Mar 2026",
       size: "890 KB",
-
       accessGranted: true,
       lastAccessed: "28 Apr 2026",
       requests: [],
@@ -26,7 +25,6 @@ const initialDocs = {
       name: "Fixed Deposit Certificate",
       period: "FY 2025–26",
       size: "340 KB",
-
       accessGranted: false,
       lastAccessed: null,
       requests: [],
@@ -38,7 +36,6 @@ const initialDocs = {
       name: "Aadhaar Card",
       issuer: "UIDAI",
       size: "1.2 MB",
-
       accessGranted: false,
       lastAccessed: null,
       requests: [{ by: "Mumbai Municipal Corp.", date: "20 May 2026", status: "pending" }],
@@ -48,7 +45,6 @@ const initialDocs = {
       name: "PAN Card",
       issuer: "Income Tax Dept.",
       size: "560 KB",
-
       accessGranted: true,
       lastAccessed: "15 May 2026",
       requests: [],
@@ -58,7 +54,6 @@ const initialDocs = {
       name: "Passport",
       issuer: "Ministry of External Affairs",
       size: "3.8 MB",
-
       accessGranted: false,
       lastAccessed: null,
       requests: [],
@@ -68,7 +63,6 @@ const initialDocs = {
       name: "Voter ID",
       issuer: "Election Commission of India",
       size: "720 KB",
-
       accessGranted: false,
       lastAccessed: null,
       requests: [{ by: "State Election Office", date: "02 May 2026", status: "pending" }],
@@ -77,9 +71,9 @@ const initialDocs = {
 };
 
 const tabs = [
-  { id: "bank", label: "Bank Statements", icon: "💰" },
-  { id: "govt", label: "Gov. Documents", icon: "🏛️" },
-  { id: "activity", label: "Access Log", icon: "📋" },
+  { id: "bank", label: "Bank Statements" },
+  { id: "govt", label: "Gov. Documents" },
+  { id: "activity", label: "Access Log" },
 ];
 
 function AccessToggle({ granted, onToggle }) {
@@ -126,22 +120,13 @@ function DocCard({ doc, onToggle, onApprove, onDeny }) {
       flexDirection: "column",
       gap: "14px",
       boxShadow: "0 1px 6px rgba(15,23,42,0.05)",
-      transition: "box-shadow 0.2s",
     }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "12px",
-            background: "#f1f5f9",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "22px",
-          }}>{doc.icon}</div>
-          <div>
-            <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "15px" }}>{doc.name}</div>
-            <div style={{ color: "#94a3b8", fontSize: "12px", marginTop: 2 }}>
-              {doc.period || doc.issuer} · {doc.size}
-            </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "15px" }}>{doc.name}</div>
+          <div style={{ color: "#94a3b8", fontSize: "12px", marginTop: 2 }}>
+            {doc.period || doc.issuer} · {doc.size}
           </div>
         </div>
         <AccessToggle granted={doc.accessGranted} onToggle={onToggle} />
@@ -154,7 +139,7 @@ function DocCard({ doc, onToggle, onApprove, onDeny }) {
           background: "#f8fafc", borderRadius: "8px",
           padding: "6px 10px",
         }}>
-          🕐 Last accessed: {doc.lastAccessed}
+          Last accessed: {doc.lastAccessed}
         </div>
       )}
 
@@ -169,17 +154,17 @@ function DocCard({ doc, onToggle, onApprove, onDeny }) {
           {pendingReqs.map((req, i) => (
             <div key={i}>
               <div style={{ fontSize: "12px", color: "#92400e", fontWeight: 600, marginBottom: 8 }}>
-                ⚠️ Access Request — {req.by}
+                Access Request — {req.by}
               </div>
               <div style={{ fontSize: "11px", color: "#a16207", marginBottom: 10 }}>
                 Requested on {req.date}
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button onClick={() => onApprove(req)} style={btnStyle("#16a34a", "#f0fdf4", "#bbf7d0")}>
-                  ✓ Approve
+                  Approve
                 </button>
                 <button onClick={() => onDeny(req)} style={btnStyle("#dc2626", "#fff1f2", "#fecaca")}>
-                  ✕ Deny
+                  Deny
                 </button>
               </div>
             </div>
@@ -204,11 +189,11 @@ function ActivityLog({ docs }) {
   Object.entries(docs).forEach(([, list]) => {
     list.forEach(doc => {
       if (doc.lastAccessed) {
-        allEvents.push({ doc: doc.name, icon: doc.icon, action: "Accessed", date: doc.lastAccessed, color: "#3b82f6" });
+        allEvents.push({ doc: doc.name, action: "Accessed", date: doc.lastAccessed, color: "#3b82f6" });
       }
       doc.requests.forEach(r => {
         allEvents.push({
-          doc: doc.name, icon: doc.icon,
+          doc: doc.name,
           action: r.status === "pending" ? `Request by ${r.by}` : `${r.status} — ${r.by}`,
           date: r.date,
           color: r.status === "pending" ? "#f59e0b" : r.status === "approved" ? "#22c55e" : "#ef4444",
@@ -230,11 +215,6 @@ function ActivityLog({ docs }) {
           padding: "14px 18px",
           display: "flex", alignItems: "center", gap: "14px",
         }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: "10px",
-            background: "#f8fafc", display: "flex",
-            alignItems: "center", justifyContent: "center", fontSize: "18px",
-          }}>{e.icon}</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: "14px", color: "#0f172a" }}>{e.doc}</div>
             <div style={{ fontSize: "12px", color: e.color, marginTop: 2, fontWeight: 600 }}>{e.action}</div>
@@ -250,20 +230,33 @@ export default function CivicVault() {
   const [activeTab, setActiveTab] = useState("bank");
   const [docs, setDocs] = useState(initialDocs);
   const [toast, setToast] = useState(null);
+  const [showWarning, setShowWarning] = useState(false);
 
   const showToast = (msg, color = "#22c55e") => {
     setToast({ msg, color });
     setTimeout(() => setToast(null), 3000);
   };
 
+  const emergencyStop = () => {
+    setDocs(prev => {
+      const updated = {};
+      Object.entries(prev).forEach(([section, list]) => {
+        updated[section] = list.map(d => ({ ...d, accessGranted: false }));
+      });
+      return updated;
+    });
+    setShowWarning(false);
+    showToast("All access revoked — Emergency Stop activated", "#dc2626");
+  };
+
   const toggleAccess = (section, id) => {
+    const doc = docs[section].find(d => d.id === id);
     setDocs(prev => ({
       ...prev,
       [section]: prev[section].map(d =>
         d.id === id ? { ...d, accessGranted: !d.accessGranted } : d
       ),
     }));
-    const doc = docs[section].find(d => d.id === id);
     showToast(
       doc.accessGranted ? `Access revoked for ${doc.name}` : `Access granted for ${doc.name}`,
       doc.accessGranted ? "#ef4444" : "#22c55e"
@@ -298,6 +291,57 @@ export default function CivicVault() {
       background: "#f8fafc",
       fontFamily: "'DM Sans', 'Outfit', system-ui, sans-serif",
     }}>
+      {/* Warning Modal */}
+      {showWarning && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 2000,
+          background: "rgba(15,23,42,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)",
+          animation: "fadeIn 0.15s ease",
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: "20px",
+            padding: "32px 28px", maxWidth: 380, width: "90%",
+            boxShadow: "0 24px 60px rgba(15,23,42,0.2)",
+            textAlign: "center",
+          }}>
+            <div style={{ fontWeight: 800, fontSize: "18px", color: "#dc2626", marginBottom: 8 }}>
+              Emergency Stop
+            </div>
+            <div style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.6, marginBottom: 24 }}>
+              This will <strong>immediately revoke all access</strong> to every document across all sections.
+              Any active government or third-party sessions will be terminated.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setShowWarning(false)}
+                style={{
+                  flex: 1, padding: "11px", borderRadius: "10px",
+                  border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                  color: "#64748b", fontWeight: 600, fontSize: "13px",
+                  cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={emergencyStop}
+                style={{
+                  flex: 1, padding: "11px", borderRadius: "10px",
+                  border: "none", background: "#dc2626",
+                  color: "#fff", fontWeight: 700, fontSize: "13px",
+                  cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 4px 14px rgba(220,38,38,0.35)",
+                }}
+              >
+                Revoke All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div style={{
@@ -324,32 +368,38 @@ export default function CivicVault() {
             justifyContent: "space-between",
             padding: "20px 0 16px",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: "10px",
-                background: "#0f172a",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "18px",
-              }}>🔐</div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: "18px", color: "#0f172a", letterSpacing: "-0.03em" }}>
-                  CivicVault
-                </div>
-                <div style={{ fontSize: "11px", color: "#94a3b8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                  Your Data, Your Control
-                </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "18px", color: "#0f172a", letterSpacing: "-0.03em" }}>
+                CivicVault
+              </div>
+              <div style={{ fontSize: "11px", color: "#94a3b8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Your Data, Your Control
               </div>
             </div>
-            {/* Stats pills */}
-            <div style={{ display: "flex", gap: 8 }}>
+
+            {/* Stats pills + Emergency Stop */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <StatPill label="Total" value={totalDocs} color="#64748b" />
               <StatPill label="Open" value={openDocs} color="#22c55e" />
               {pendingCount > 0 && <StatPill label="Requests" value={pendingCount} color="#f59e0b" />}
+              <button
+                onClick={() => setShowWarning(true)}
+                style={{
+                  padding: "6px 14px", borderRadius: "999px",
+                  border: "1.5px solid #fca5a5",
+                  background: "#fff1f2", color: "#dc2626",
+                  fontSize: "12px", fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                Emergency Stop
+              </button>
             </div>
           </div>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 2, paddingBottom: 0 }}>
+          <div style={{ display: "flex", gap: 2 }}>
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -369,7 +419,7 @@ export default function CivicVault() {
                   marginBottom: "-1px",
                 }}
               >
-                {tab.icon} {tab.label}
+                {tab.label}
                 {tab.id !== "activity" && (
                   <span style={{
                     background: activeTab === tab.id ? "#0f172a" : "#f1f5f9",
@@ -387,7 +437,7 @@ export default function CivicVault() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px" }}>
         {activeTab === "activity" ? (
           <ActivityLog docs={docs} />
         ) : (
@@ -401,7 +451,6 @@ export default function CivicVault() {
                 onDeny={(req) => handleRequest(activeTab, doc.id, req, false)}
               />
             ))}
-            {/* Add slot */}
             <button style={{
               background: "none",
               border: "1.5px dashed #cbd5e1",
