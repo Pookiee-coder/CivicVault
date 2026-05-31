@@ -1,5 +1,8 @@
 # Civic Sense — Full Stack
 
+> **Note for Reviewers:** The originally submitted deployment link is currently not working. Please use the following link to access the live application:
+> **https://civicsense-rouge-beta.vercel.app/**
+
 A full-stack privacy and civic data management platform. Civic Sense allows citizens to control what government bodies can access from their personal documents and social media accounts. Government bodies can search citizens, view permitted documents, and formally request access to locked content.
 
 ---
