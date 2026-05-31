@@ -7,6 +7,7 @@ const initialDocs = {
       name: "HDFC Bank Statement",
       period: "Apr 2025 – Mar 2026",
       size: "2.1 MB",
+      icon: "🏦",
       accessGranted: false,
       lastAccessed: null,
       requests: [{ by: "Income Tax Dept.", date: "12 May 2026", status: "pending" }],
@@ -16,7 +17,7 @@ const initialDocs = {
       name: "SBI Savings Account",
       period: "Jan – Mar 2026",
       size: "890 KB",
-
+      icon: "💳",
       accessGranted: true,
       lastAccessed: "28 Apr 2026",
       requests: [],
@@ -26,7 +27,7 @@ const initialDocs = {
       name: "Fixed Deposit Certificate",
       period: "FY 2025–26",
       size: "340 KB",
-
+      icon: "📄",
       accessGranted: false,
       lastAccessed: null,
       requests: [],
@@ -38,7 +39,7 @@ const initialDocs = {
       name: "Aadhaar Card",
       issuer: "UIDAI",
       size: "1.2 MB",
-
+      icon: "🪪",
       accessGranted: false,
       lastAccessed: null,
       requests: [{ by: "Mumbai Municipal Corp.", date: "20 May 2026", status: "pending" }],
@@ -48,7 +49,7 @@ const initialDocs = {
       name: "PAN Card",
       issuer: "Income Tax Dept.",
       size: "560 KB",
-
+      icon: "🗂️",
       accessGranted: true,
       lastAccessed: "15 May 2026",
       requests: [],
@@ -58,7 +59,7 @@ const initialDocs = {
       name: "Passport",
       issuer: "Ministry of External Affairs",
       size: "3.8 MB",
-
+      icon: "📕",
       accessGranted: false,
       lastAccessed: null,
       requests: [],
@@ -68,7 +69,7 @@ const initialDocs = {
       name: "Voter ID",
       issuer: "Election Commission of India",
       size: "720 KB",
-
+      icon: "🗳️",
       accessGranted: false,
       lastAccessed: null,
       requests: [{ by: "State Election Office", date: "02 May 2026", status: "pending" }],
@@ -77,9 +78,9 @@ const initialDocs = {
 };
 
 const tabs = [
-  { id: "bank", label: "Bank Statements", icon: "💰" },
-  { id: "govt", label: "Gov. Documents", icon: "🏛️" },
-  { id: "activity", label: "Access Log", icon: "📋" },
+  { id: "bank", label: "Bank Statements" },
+  { id: "govt", label: "Gov. Documents" },
+  { id: "activity", label: "Access Log" },
 ];
 
 function AccessToggle({ granted, onToggle }) {
@@ -131,12 +132,6 @@ function DocCard({ doc, onToggle, onApprove, onDeny }) {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "12px",
-            background: "#f1f5f9",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "22px",
-          }}>{doc.icon}</div>
           <div>
             <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "15px" }}>{doc.name}</div>
             <div style={{ color: "#94a3b8", fontSize: "12px", marginTop: 2 }}>
@@ -204,11 +199,11 @@ function ActivityLog({ docs }) {
   Object.entries(docs).forEach(([, list]) => {
     list.forEach(doc => {
       if (doc.lastAccessed) {
-        allEvents.push({ doc: doc.name, icon: doc.icon, action: "Accessed", date: doc.lastAccessed, color: "#3b82f6" });
+        allEvents.push({ doc: doc.name, action: "Accessed", date: doc.lastAccessed, color: "#3b82f6" });
       }
       doc.requests.forEach(r => {
         allEvents.push({
-          doc: doc.name, icon: doc.icon,
+          doc: doc.name,
           action: r.status === "pending" ? `Request by ${r.by}` : `${r.status} — ${r.by}`,
           date: r.date,
           color: r.status === "pending" ? "#f59e0b" : r.status === "approved" ? "#22c55e" : "#ef4444",
@@ -230,11 +225,6 @@ function ActivityLog({ docs }) {
           padding: "14px 18px",
           display: "flex", alignItems: "center", gap: "14px",
         }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: "10px",
-            background: "#f8fafc", display: "flex",
-            alignItems: "center", justifyContent: "center", fontSize: "18px",
-          }}>{e.icon}</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: "14px", color: "#0f172a" }}>{e.doc}</div>
             <div style={{ fontSize: "12px", color: e.color, marginTop: 2, fontWeight: 600 }}>{e.action}</div>
@@ -369,7 +359,7 @@ export default function CivicVault() {
                   marginBottom: "-1px",
                 }}
               >
-                {tab.icon} {tab.label}
+                {tab.label}
                 {tab.id !== "activity" && (
                   <span style={{
                     background: activeTab === tab.id ? "#0f172a" : "#f1f5f9",

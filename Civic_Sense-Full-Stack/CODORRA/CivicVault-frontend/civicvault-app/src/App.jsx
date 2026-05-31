@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +36,51 @@ const tabs = [
   { id: "social", label: "Social Media" },
   { id: "activity", label: "Access Log" },
 ];
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+
+const SESSION_KEY = "civicvault-session";
+
+function getSessionProfile() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getDemoHeaders() {
+  const session = getSessionProfile();
+  return {
+    "x-demo-user-id": session?.id || import.meta.env.VITE_DEMO_USER_ID || "9764b712-eaf7-4836-895f-d5a4348b2bb5",
+    "x-demo-user-email": session?.email || import.meta.env.VITE_DEMO_USER_EMAIL || "demo@civicvault.local",
+    "x-demo-user-name": session?.name || import.meta.env.VITE_DEMO_USER_NAME || "CivicVault Demo",
+    "x-demo-role": session?.role || import.meta.env.VITE_DEMO_ROLE || "user",
+    ...(session?.government_id ? { "x-demo-government-id": session.government_id } : {}),
+  };
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...getDemoHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.message || `Request failed with status ${response.status}`);
+  }
+
+  return payload;
+}
 
 // ─── SHARED COMPONENTS ───────────────────────────────────────────────────────
 
@@ -298,50 +343,114 @@ export default function CivicVault() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const emergencyStop = () => {
-    setDocs(prev => {
-      const updated = {};
-      Object.entries(prev).forEach(([s, list]) => { updated[s] = list.map(d => ({ ...d, accessGranted: false })); });
-      return updated;
-    });
-    // -----------------------------------------------------------------------------
-    // --- SOCIAL MEDIA ADDITION: Emergency stop deactivates social accounts ---
-    // -----------------------------------------------------------------------------
-    setSocial(prev => prev.map(a => ({ ...a, active: false })));
-    setShowWarning(false);
-    showToast("All access revoked — Emergency Stop activated", "#dc2626");
+  useEffect(() => {
+    let active = true;
+
+    const loadDashboard = async () => {
+      try {
+        const result = await apiRequest("/civicvault/dashboard");
+        if (!active) return;
+        setDocs(result.dashboard.sections);
+        setSocial(result.dashboard.social ?? initialSocial);
+      } catch (error) {
+        if (!active) return;
+        showToast(error instanceof Error ? error.message : "Backend unavailable, using local state", "#dc2626");
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const commitDashboard = (dashboard) => {
+    setDocs(dashboard.sections);
+    if (dashboard.social) {
+      setSocial(dashboard.social);
+    }
   };
 
-  const toggleAccess = (section, id) => {
+  const emergencyStop = async () => {
+    try {
+      const result = await apiRequest("/civicvault/emergency/stop", { method: "POST" });
+      commitDashboard(result.dashboard);
+      showToast("All access revoked — Emergency Stop activated", "#dc2626");
+    } catch (error) {
+      setDocs(prev => {
+        const updated = {};
+        Object.entries(prev).forEach(([s, list]) => { updated[s] = list.map(d => ({ ...d, accessGranted: false })); });
+        return updated;
+      });
+      setSocial(prev => prev.map(a => ({ ...a, active: false })));
+      showToast(error instanceof Error ? error.message : "Emergency stop applied locally", "#dc2626");
+    } finally {
+      setShowWarning(false);
+    }
+  };
+
+  const toggleAccess = async (section, id) => {
     const doc = docs[section].find(d => d.id === id);
-    setDocs(prev => ({ ...prev, [section]: prev[section].map(d => d.id === id ? { ...d, accessGranted: !d.accessGranted } : d) }));
-    showToast(doc.accessGranted ? `Access revoked for ${doc.name}` : `Access granted for ${doc.name}`, doc.accessGranted ? "#ef4444" : "#22c55e");
+
+    try {
+      const result = await apiRequest(`/civicvault/documents/${section}/${id}/access`, { method: "PATCH" });
+      commitDashboard(result.dashboard);
+      showToast(doc.accessGranted ? `Access revoked for ${doc.name}` : `Access granted for ${doc.name}`, doc.accessGranted ? "#ef4444" : "#22c55e");
+    } catch (error) {
+      setDocs(prev => ({ ...prev, [section]: prev[section].map(d => d.id === id ? { ...d, accessGranted: !d.accessGranted } : d) }));
+      showToast(error instanceof Error ? error.message : "Access updated locally", doc.accessGranted ? "#ef4444" : "#22c55e");
+    }
   };
 
   // -----------------------------------------------------------------------------
   // --- SOCIAL MEDIA ADDITION: Toggle social account ---
   // -----------------------------------------------------------------------------
-  const toggleSocial = (id) => {
+  const toggleSocial = async (id) => {
     const acc = social.find(a => a.id === id);
-    setSocial(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
-    showToast(acc.active ? `${acc.name} deactivated` : `${acc.name} activated`, acc.active ? "#ef4444" : "#22c55e");
+
+    try {
+      const result = await apiRequest(`/civicvault/social/${id}/toggle`, { method: "PATCH" });
+      commitDashboard(result.dashboard);
+      showToast(acc.active ? `${acc.name} deactivated` : `${acc.name} activated`, acc.active ? "#ef4444" : "#22c55e");
+    } catch (error) {
+      setSocial(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
+      showToast(error instanceof Error ? error.message : "Social account updated locally", acc.active ? "#ef4444" : "#22c55e");
+    }
   };
 
   // -----------------------------------------------------------------------------
   // --- SOCIAL MEDIA ADDITION: Delete social account ---
   // -----------------------------------------------------------------------------
-  const deleteSocial = (id) => {
+  const deleteSocial = async (id) => {
     const acc = social.find(a => a.id === id);
-    setSocial(prev => prev.filter(a => a.id !== id));
-    showToast(`${acc.name} removed`, "#64748b");
+
+    try {
+      const result = await apiRequest(`/civicvault/social/${id}`, { method: "DELETE" });
+      commitDashboard(result.dashboard);
+      showToast(`${acc.name} removed`, "#64748b");
+    } catch (error) {
+      setSocial(prev => prev.filter(a => a.id !== id));
+      showToast(error instanceof Error ? error.message : "Social account removed locally", "#64748b");
+    }
   };
 
   // -----------------------------------------------------------------------------
   // --- SOCIAL MEDIA ADDITION: Add a social account ---
   // -----------------------------------------------------------------------------
-  const addSocial = ({ name, handle }) => {
-    setSocial(prev => [...prev, { id: `s-${Date.now()}`, name, handle, active: false, linkedSince: new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" }) }]);
-    showToast(`${name} linked`);
+  const addSocial = async ({ name, handle }) => {
+    try {
+      const result = await apiRequest("/civicvault/social", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, handle })
+      });
+      commitDashboard(result.dashboard);
+      showToast(`${name} linked`);
+    } catch (error) {
+      setSocial(prev => [...prev, { id: `s-${Date.now()}`, name, handle, active: false, linkedSince: new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" }) }]);
+      showToast(error instanceof Error ? error.message : "Social account linked locally");
+    }
   };
 
   const uploadDoc = () => {

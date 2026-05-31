@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── MOCK CITIZEN DATABASE ────────────────────────────────────────────────────
 // In production this comes from your backend API
@@ -63,6 +63,50 @@ const GOV_BODY = {
   dept: "Department of Civil Records",
   id: "GOV-MMC-001",
 };
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const SESSION_KEY = "civicvault-session";
+
+function getSessionProfile() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getSessionHeaders() {
+  const session = getSessionProfile();
+  return {
+    "x-demo-user-id": session?.id || "9764b712-eaf7-4836-895f-d5a4348b2bb5",
+    "x-demo-user-email": session?.email || "demo@civicvault.local",
+    "x-demo-user-name": session?.name || GOV_BODY.name,
+    "x-demo-role": session?.role || "admin",
+    ...(session?.government_id ? { "x-demo-government-id": session.government_id } : {}),
+  };
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...getSessionHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.message || `Request failed with status ${response.status}`);
+  }
+
+  return payload;
+}
 
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
 
@@ -372,6 +416,22 @@ export default function GovPortal() {
   const [toast, setToast] = useState(null);
   const [requestModal, setRequestModal] = useState(null); // { citizen, doc }
 
+  const refreshCitizens = async () => {
+    try {
+      const payload = await apiRequest("/admin/citizens");
+      setCitizens(payload.citizens || []);
+      if (!selectedId && payload.citizens?.length) {
+        setSelectedId(payload.citizens[0].id);
+      }
+    } catch {
+      setCitizens(mockCitizens);
+    }
+  };
+
+  useEffect(() => {
+    void refreshCitizens();
+  }, []);
+
   const showToast = (msg, color = "#22c55e") => {
     setToast({ msg, color });
     setTimeout(() => setToast(null), 3000);
@@ -385,16 +445,27 @@ export default function GovPortal() {
 
   const selected = citizens.find(c => c.id === selectedId) || null;
 
-  const sendRequest = () => {
+  const sendRequest = async () => {
     if (!requestModal) return;
     const { citizen, doc } = requestModal;
-    setCitizens(prev => prev.map(c =>
-      c.id === citizen.id
-        ? { ...c, requests: [...c.requests, { docId: doc.id, docName: doc.name, status: "pending", date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) }] }
-        : c
-    ));
-    setRequestModal(null);
-    showToast(`Access requested for "${doc.name}"`, "#f59e0b");
+    try {
+      await apiRequest("/admin/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetUserId: citizen.id,
+          officerName: GOV_BODY.name,
+          reason: `Request access to ${doc.name}`,
+          caseId: doc.id,
+        }),
+      });
+
+      setRequestModal(null);
+      showToast(`Access requested for "${doc.name}"`, "#f59e0b");
+      await refreshCitizens();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Unable to send request", "#dc2626");
+    }
   };
 
   return (

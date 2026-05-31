@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const SESSION_KEY = "civicvault-session";
+
 // ─── useAuth ──────────────────────────────────────────────────────────────────
 // Custom hook that owns all authentication logic for CivicVault.
 
@@ -56,27 +59,45 @@ export function useAuth() {
   };
 
   // ── Submit handler ────────────────────────────────────────────────────────────
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setStatus(null);
 
     if (!validate()) return;
 
-    setStatus({
-      type: "success",
-      message: isSignIn
-        ? `Signing you in as ${isUserRole ? "a citizen" : "a government body"}.`
-        : `Creating a ${isUserRole ? "citizen" : "government body"} account.`,
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: mode,
+          role,
+          name: formState.name || formState.email.split("@")[0],
+          email: formState.email,
+          governmentId: formState.governmentId || null,
+        }),
+      });
 
-    // Route to the correct dashboard based on role
-    setTimeout(() => {
-      if (isUserRole) {
-        navigate("/vault");        // → CivicVault citizen view
-      } else {
-        navigate("/gov");          // → GovPortal government view
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error || payload?.message || "Unable to create session");
       }
-    }, 1000);
+
+      const session = payload.user;
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      setStatus({
+        type: "success",
+        message: isSignIn
+          ? `Signing you in as ${session.role === "admin" ? "a government body" : "a citizen"}.`
+          : `Creating a ${session.role === "admin" ? "government body" : "citizen"} account.`,
+      });
+
+      setTimeout(() => {
+        navigate(session.role === "admin" ? "/gov" : "/vault");
+      }, 600);
+    } catch (error) {
+      setStatus({ type: "error", message: error instanceof Error ? error.message : "Failed to create session." });
+    }
   };
 
   // ── Google OAuth placeholder ──────────────────────────────────────────────────
