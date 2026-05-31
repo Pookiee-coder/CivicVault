@@ -125,7 +125,7 @@ export default function AuthPage() {
   const inputStyle = {
     width: "100%", padding: "12px 14px", borderRadius: "10px",
     border: "1.5px solid #e2e8f0", fontSize: "14px", fontFamily: "inherit",
-    outline: "none", color: "#0f172a", boxSizing: "border-box",
+    outline: "none", color: "#fff", background: "#1e293b", boxSizing: "border-box",
     transition: "border-color 0.2s"
   };
 
