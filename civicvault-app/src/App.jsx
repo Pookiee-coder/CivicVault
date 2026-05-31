@@ -16,7 +16,9 @@ const initialDocs = {
   ],
 };
 
-// *** NEW: Social media accounts data ***
+// -----------------------------------------------------------------------------
+// --- SOCIAL MEDIA ADDITION: Accounts Data ---
+// -----------------------------------------------------------------------------
 const initialSocial = [
   { id: "s1", name: "Instagram", handle: "@username", active: true, linkedSince: "Jan 2023" },
   { id: "s2", name: "Twitter / X", handle: "@username", active: false, linkedSince: "Mar 2022" },
@@ -25,7 +27,9 @@ const initialSocial = [
   { id: "s5", name: "YouTube", handle: "@username", active: true, linkedSince: "Nov 2022" },
 ];
 
-// *** NEW: Added "social" tab ***
+// -----------------------------------------------------------------------------
+// --- SOCIAL MEDIA ADDITION: Added "social" tab ---
+// -----------------------------------------------------------------------------
 const tabs = [
   { id: "bank", label: "Bank Statements" },
   { id: "govt", label: "Gov. Documents" },
@@ -95,7 +99,9 @@ function DocCard({ doc, onToggle, onApprove, onDeny, onDelete }) {
   );
 }
 
-// *** NEW: Social Media Card — activate/deactivate + delete ***
+// -----------------------------------------------------------------------------
+// --- SOCIAL MEDIA ADDITION: Social Media Card ---
+// -----------------------------------------------------------------------------
 function SocialCard({ account, onToggle, onDelete }) {
   return (
     <div style={{
@@ -157,7 +163,9 @@ function SocialCard({ account, onToggle, onDelete }) {
   );
 }
 
-// *** NEW: Social media section with add account form ***
+// -----------------------------------------------------------------------------
+// --- SOCIAL MEDIA ADDITION: Social Media Section ---
+// -----------------------------------------------------------------------------
 function SocialSection({ accounts, onToggle, onDelete, onAdd }) {
   const [form, setForm] = useState({ name: "", handle: "" });
 
@@ -247,7 +255,9 @@ function ActivityLog({ docs, social }) {
       });
     });
   });
-  // *** NEW: include social account events in activity log ***
+  // -----------------------------------------------------------------------------
+  // --- SOCIAL MEDIA ADDITION: Include social events in activity log ---
+  // -----------------------------------------------------------------------------
   social.forEach(acc => {
     allEvents.push({ name: acc.name, action: acc.active ? "Account Active" : "Account Inactive", date: `Linked ${acc.linkedSince}`, color: acc.active ? "#22c55e" : "#94a3b8" });
   });
@@ -274,7 +284,9 @@ function ActivityLog({ docs, social }) {
 export default function CivicVault() {
   const [activeTab, setActiveTab] = useState("bank");
   const [docs, setDocs] = useState(initialDocs);
-  // *** NEW: social state ***
+  // -----------------------------------------------------------------------------
+  // --- SOCIAL MEDIA ADDITION: Social State ---
+  // -----------------------------------------------------------------------------
   const [social, setSocial] = useState(initialSocial);
   const [toast, setToast] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
@@ -292,7 +304,9 @@ export default function CivicVault() {
       Object.entries(prev).forEach(([s, list]) => { updated[s] = list.map(d => ({ ...d, accessGranted: false })); });
       return updated;
     });
-    // *** NEW: emergency stop also deactivates all social accounts ***
+    // -----------------------------------------------------------------------------
+    // --- SOCIAL MEDIA ADDITION: Emergency stop deactivates social accounts ---
+    // -----------------------------------------------------------------------------
     setSocial(prev => prev.map(a => ({ ...a, active: false })));
     setShowWarning(false);
     showToast("All access revoked — Emergency Stop activated", "#dc2626");
@@ -304,21 +318,27 @@ export default function CivicVault() {
     showToast(doc.accessGranted ? `Access revoked for ${doc.name}` : `Access granted for ${doc.name}`, doc.accessGranted ? "#ef4444" : "#22c55e");
   };
 
-  // *** NEW: toggle a social account active/inactive ***
+  // -----------------------------------------------------------------------------
+  // --- SOCIAL MEDIA ADDITION: Toggle social account ---
+  // -----------------------------------------------------------------------------
   const toggleSocial = (id) => {
     const acc = social.find(a => a.id === id);
     setSocial(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
     showToast(acc.active ? `${acc.name} deactivated` : `${acc.name} activated`, acc.active ? "#ef4444" : "#22c55e");
   };
 
-  // *** NEW: delete a social account ***
+  // -----------------------------------------------------------------------------
+  // --- SOCIAL MEDIA ADDITION: Delete social account ---
+  // -----------------------------------------------------------------------------
   const deleteSocial = (id) => {
     const acc = social.find(a => a.id === id);
     setSocial(prev => prev.filter(a => a.id !== id));
     showToast(`${acc.name} removed`, "#64748b");
   };
 
-  // *** NEW: add a social account ***
+  // -----------------------------------------------------------------------------
+  // --- SOCIAL MEDIA ADDITION: Add a social account ---
+  // -----------------------------------------------------------------------------
   const addSocial = ({ name, handle }) => {
     setSocial(prev => [...prev, { id: `s-${Date.now()}`, name, handle, active: false, linkedSince: new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" }) }]);
     showToast(`${name} linked`);
@@ -410,7 +430,9 @@ export default function CivicVault() {
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <StatPill label="Docs" value={totalDocs} color="#64748b" />
               <StatPill label="Open" value={openDocs} color="#22c55e" />
-              {/* *** NEW: social active count in header *** */}
+              {/* ----------------------------------------------------------------------------- */}
+              {/* --- SOCIAL MEDIA ADDITION: Social active count in header --- */}
+              {/* ----------------------------------------------------------------------------- */}
               <StatPill label="Social Active" value={social.filter(a => a.active).length} color="#6366f1" />
               {pendingCount > 0 && <StatPill label="Requests" value={pendingCount} color="#f59e0b" />}
               <button onClick={() => setShowWarning(true)} style={{ padding: "6px 14px", borderRadius: "999px", border: "1.5px solid #fca5a5", background: "#fff1f2", color: "#dc2626", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.03em" }}>
@@ -424,7 +446,9 @@ export default function CivicVault() {
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: "10px 16px", background: "none", border: "none", borderBottom: activeTab === tab.id ? "2.5px solid #0f172a" : "2.5px solid transparent", color: activeTab === tab.id ? "#0f172a" : "#94a3b8", fontWeight: activeTab === tab.id ? 700 : 500, fontSize: "13px", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, transition: "color 0.15s", marginBottom: "-1px" }}>
                 {tab.label}
-                {/* *** NEW: show count badge for social tab too *** */}
+                {/* ----------------------------------------------------------------------------- */}
+                {/* --- SOCIAL MEDIA ADDITION: Show count badge for social tab --- */}
+                {/* ----------------------------------------------------------------------------- */}
                 {(tab.id === "bank" || tab.id === "govt") && (
                   <span style={{ background: activeTab === tab.id ? "#0f172a" : "#f1f5f9", color: activeTab === tab.id ? "#fff" : "#64748b", borderRadius: "999px", padding: "1px 7px", fontSize: "11px", fontWeight: 700 }}>
                     {docs[tab.id]?.length}
@@ -443,7 +467,9 @@ export default function CivicVault() {
 
       {/* Content */}
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "24px" }}>
-        {/* *** NEW: render social section for social tab *** */}
+        {/* ----------------------------------------------------------------------------- */}
+        {/* --- SOCIAL MEDIA ADDITION: Render social section --- */}
+        {/* ----------------------------------------------------------------------------- */}
         {activeTab === "social" ? (
           <SocialSection accounts={social} onToggle={toggleSocial} onDelete={deleteSocial} onAdd={addSocial} />
         ) : activeTab === "activity" ? (
