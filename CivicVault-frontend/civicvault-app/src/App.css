@@ -295,18 +295,18 @@ body {
 
 .social-buttons {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
 .social-btn {
-  padding: 12px;
+  padding: 14px 20px;
   background: #0a0a0a;
   border: 1px solid #333333;
   border-radius: 10px;
   color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;

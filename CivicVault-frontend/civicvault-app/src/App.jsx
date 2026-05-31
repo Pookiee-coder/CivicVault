@@ -23,6 +23,7 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [formState, setFormState] = useState({
     name: "",
+    governmentId: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -138,6 +139,21 @@ export default function App() {
             </div>
           )}
 
+          {!isUserRole && (
+            <div className="form-group">
+              <label>Government ID No.</label>
+              <input
+                type="text"
+                autoComplete="off"
+                inputMode="numeric"
+                placeholder="Enter government ID number"
+                value={formState.governmentId}
+                onChange={event => updateField("governmentId", event.target.value)}
+                required
+              />
+            </div>
+          )}
+
           <div className="form-group">
             <label>Email Address</label>
             <input
@@ -218,12 +234,6 @@ export default function App() {
             <button type="button" className="social-btn google-btn">
               <GoogleIcon />
               <span>Google</span>
-            </button>
-            <button type="button" className="social-btn">
-              Government ID
-            </button>
-            <button type="button" className="social-btn">
-              Bank OTP
             </button>
           </div>
         </form>
